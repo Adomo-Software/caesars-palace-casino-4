@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 enum SomeEnum {
     FIRST_FLOOR,
@@ -36,12 +35,14 @@ class Configuration {
 }
 
 class FloorHandler {
-    public static void itsUnavailable(Elevator elevator, Floor floor) {
+    public static void requestHandleUnavailable(Elevator elevator, Floor floor) {
         System.out.println("Floor " + floor.getConfiguration().getFloor() + " is bad ): maybe try next floor.");
     }
 
-    public static void itsAvailable(Elevator elevator, Floor floor) {
-        System.out.println("Floor " + floor.getConfiguration().getFloor() + " is bad ): maybe try next floor.");
+    public static void requestHandleAvailable(Elevator elevator, Floor floor) {
+        for (int i = 0; i < floor.getConfiguration().getNumber(); i++) {
+            System.out.println(elevator.getFloors().get(i).getConfiguration().getNumber());
+        }
     }
 
     public static void unknownStatus(Elevator _unused, Floor floor) {
@@ -56,8 +57,8 @@ class Floor {
     public Floor(Configuration configuration) {
         this.configuration = configuration;
 
-        actions.put("unavailable",  FloorHandler::itsUnavailable);
-        actions.put("available", FloorHandler::itsAvailable);
+        actions.put("unavailable",  FloorHandler::requestHandleUnavailable);
+        actions.put("available", FloorHandler::requestHandleAvailable);
     }
 
     public Configuration getConfiguration () {
@@ -77,6 +78,10 @@ class Elevator {
         this.floors = Arrays.asList(floors);
     }
 
+    public List<Floor> getFloors() {
+        return floors;
+    }
+
     public void gotoFloor(int floorNumber) {
         floors.get(floorNumber - 1).request(this);
         // TODO
@@ -86,10 +91,12 @@ class Elevator {
 public class Main {
     public static void main(String[] args) {
         Floor floor1 = new Floor(new Configuration(1, "available", SomeEnum.FIRST_FLOOR));
-        Floor floor2 = new Floor(new Configuration(2, "unavailable", SomeEnum.SECOND_FLOOR));
+        Floor floor2 = new Floor(new Configuration(2, "available", SomeEnum.SECOND_FLOOR));
+        Floor floor3 = new Floor(new Configuration(3, "unavailable", SomeEnum.SECOND_FLOOR));
+        Floor floor4 = new Floor(new Configuration(4, "available", SomeEnum.SECOND_FLOOR));
 
-        Elevator elevator = new Elevator(floor1, floor2);
+        Elevator elevator = new Elevator(floor1, floor2, floor3, floor4);
 
-        elevator.gotoFloor(2);
+        elevator.gotoFloor(4);
     }
 }
