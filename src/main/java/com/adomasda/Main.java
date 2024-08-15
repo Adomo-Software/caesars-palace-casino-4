@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 enum SomeEnum {
     FIRST_FLOOR,
@@ -35,14 +36,28 @@ class Configuration {
 }
 
 class FloorHandler {
-    public static void requestHandleUnavailable(Elevator elevator, Floor floor) {
-        System.out.println("Floor " + floor.getConfiguration().getFloor() + " is bad ): maybe try next floor.");
+    /*
+    handleRequest_ is per request (look at requestFloor),
+    handleReport_ is per floor (look at handleRequestAvailable)
+    */
+
+    public static void handleRequestUnavailable(Elevator elevator, Floor floor) {
+        System.out.println("Floor " + floor.getConfiguration().getNumber() + " is bad ): maybe try next floor.");
     }
 
-    public static void requestHandleAvailable(Elevator elevator, Floor floor) {
+    public static void handleRequestAvailable(Elevator elevator, Floor floor) {
         for (int i = 0; i < floor.getConfiguration().getNumber(); i++) {
-            System.out.println(elevator.getFloors().get(i).getConfiguration().getNumber());
+            System.out.println(elevator.getFloors().get(i).report());
         }
+    }
+
+    public static void handleReportUnavailable(Floor floor) {
+        floor.reportString = Integer.toString(floor.getConfiguration().getNumber()) + " - is unavailable";
+    }
+
+    public static void handleReportAvailable(Floor floor) {
+        floor.reportString = Integer.toString(floor.getConfiguration().getNumber());
+
     }
 
     public static void unknownStatus(Elevator _unused, Floor floor) {
@@ -52,13 +67,17 @@ class FloorHandler {
 
 class Floor {
     private final Configuration configuration;
-    private final HashMap<String, BiConsumer<Elevator, Floor>> actions = new HashMap<>();
+    private final HashMap<String, BiConsumer<Elevator, Floor>> requestActions = new HashMap<>();
+    private final HashMap<String, Consumer<Floor>> reportActions = new HashMap<>();
+    public String reportString;
 
     public Floor(Configuration configuration) {
         this.configuration = configuration;
 
-        actions.put("unavailable",  FloorHandler::requestHandleUnavailable);
-        actions.put("available", FloorHandler::requestHandleAvailable);
+        requestActions.put("unavailable",  FloorHandler::handleRequestUnavailable);
+        requestActions.put("available", FloorHandler::handleRequestAvailable);
+        reportActions.put("unavailable",  FloorHandler::handleReportUnavailable);
+        reportActions.put("available", FloorHandler::handleReportAvailable);
     }
 
     public Configuration getConfiguration () {
@@ -66,8 +85,14 @@ class Floor {
     }
 
     public void request(Elevator elevator) {
-        BiConsumer<Elevator, Floor> action = actions.getOrDefault(configuration.getStatus(), FloorHandler::unknownStatus);
-        action.accept(elevator, this);
+        BiConsumer<Elevator, Floor> requestAction = requestActions.getOrDefault(configuration.getStatus(), FloorHandler::unknownStatus);
+        requestAction.accept(elevator, this);
+    }
+
+    public String report() {
+        Consumer<Floor> reportAction = reportActions.get(configuration.getStatus());
+        reportAction.accept(this);
+        return reportString;
     }
 }
 
@@ -82,9 +107,8 @@ class Elevator {
         return floors;
     }
 
-    public void gotoFloor(int floorNumber) {
+    public void requestFloor(int floorNumber) {
         floors.get(floorNumber - 1).request(this);
-        // TODO
     }
 }
 
@@ -97,6 +121,7 @@ public class Main {
 
         Elevator elevator = new Elevator(floor1, floor2, floor3, floor4);
 
-        elevator.gotoFloor(4);
+        elevator.requestFloor(4);
+        elevator.requestFloor(3);
     }
 }
