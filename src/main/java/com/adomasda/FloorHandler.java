@@ -2,8 +2,10 @@ package com.adomasda;
 
 class FloorHandler {
     /*
-    handleRequest_ is per request (look at requestFloor),
-    handleReport_ is per floor (look at handleRequestAvailable)
+    FloorHandler is for containing all handle_ logic in one file.
+
+    handleRequest_ is per request (look at Elevator.requestFloor),
+    handleReport_ is per floor (look at FloorHandler.handleRequestAvailable)
     */
 
     public static void handleRequestUnavailable(Elevator elevator, Floor floor) {
